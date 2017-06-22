@@ -1,0 +1,12 @@
+.no-fouc x-columns{
+  visibility: hidden;
+}
+x-columns {
+  display: flex;
+  /*align-items: center;*/
+  justify-content: center;
+}
+x-columns > div {
+  flex: 1;
+  margin: 0 auto
+}
