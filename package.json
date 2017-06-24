@@ -1,6 +1,6 @@
 {
   "name": "pwet-columns",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Pwet component to dispatch html blocks into separate columns",
   "main": "src/index.js",
   "repository": "https://github.com/Gastonite/pwet-image-loader",
