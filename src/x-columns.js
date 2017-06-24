@@ -3,6 +3,7 @@ import Attribute from 'pwet/src/attribute';
 import { assert, isNull, isUndefined, isObject, isFunction, isArray, isElement, isDeeplyEqual } from 'pwet/src/assertions';
 import { patch, patchOuter, currentElement, skip, skipNode, text } from 'incremental-dom';
 import { renderDiv } from 'idom-util';
+import StatefulComponent from 'pwet/src/decorators/stateful';
 
 const internal = {};
 
@@ -17,13 +18,22 @@ internal.Columns = (component) => {
 
   const { element } = component;
 
-  element.classList.add('no-fouc');
-
   console.log('Columns()');
 
+  let _children;
 
   const attach = attach => {
-    console.log('Columns.attach()', component.properties);
+
+    const { properties } = component;
+
+    console.log('Columns.attach()', properties.children.length, component.state);
+
+    if (properties.children.length < 1)
+      component.initialize({
+        children: Array.from(element.childNodes)
+          .map(element.removeChild.bind(element))
+          .filter(isElement)
+      });
 
     attach(!component.isRendered);
   };
@@ -32,76 +42,69 @@ internal.Columns = (component) => {
     console.log('Columns.detach()');
   };
 
-
-  const children = Array.from(element.childNodes).map(element.removeChild.bind(element));
-
   const initialize = (newProperties, initialize) => {
 
-    const oldProperties = component.properties;
+    const { properties } = component;
 
-    newProperties.children = children
+    console.log('Columns.initialize()', newProperties.children);
 
-      .filter(isElement)
-      .reduce((children, child, i) => {
+    const columns = newProperties.children.reduce((children, child, i) => {
 
-        children[i % newProperties.columns].push(child);
+      children[i % newProperties.columns].push(child);
 
-        return children;
-      }, new Array(newProperties.columns).fill().map(() => []));
+      return children;
+    }, new Array(newProperties.columns).fill().map(() => []));
 
+    component.editState({
+      columns
+    });
 
     initialize(
-      !component.isRendered || !isDeeplyEqual(oldProperties, newProperties)
+      component.isAttached && !isDeeplyEqual(properties, newProperties)
     );
   };
 
-  const update = (newState, update) => {
-
-    const { state } = component;
-
-    console.log('Columns.update()', state);
-
-    update(true);
-
-  };
-
   const render = () => {
-    const { properties } = component;
-    const { children } = properties;
+    const { element, properties, state } = component;
+    const { columns } = state;
+    const { children, renderColumns } = properties;
 
-    console.error('Columns.render()');
+    console.error('Columns.render()', properties, state);
 
-    patch(element, () => {
-
-      children.forEach((children, i) => {
-        renderDiv(i, () => {
-          const currentColumn = currentElement();
-          children.forEach((child, j) => {
-            renderDiv(i+'_'+j, () => {
-
-              currentElement().appendChild(child);
-              skip();
-
-            });
-          });
-        });
-      });
-
-    });
+    renderColumns(element, columns);
   };
-
 
   return {
     attach,
     detach,
-    update,
     initialize,
     render
   };
 };
 
+internal.Columns.create = StatefulComponent;
+
+internal.Columns.initialState = {
+  columns: []
+};
+
 internal.Columns.properties = {
-  columns: Attribute.integer()
+  columns: Attribute.integer({ defaultValue: 2 }),
+  children: {
+    defaultValue: [],
+  },
+  renderColumns(element, columns) {
+
+    while (element.firstChild)
+      element.removeChild(element.firstChild);
+
+    columns.forEach(children => {
+
+      const columnElement = element.appendChild(document.createElement('div'));
+
+      children.forEach(item => columnElement.appendChild(item));
+    });
+  }
 };
 
 internal.Columns.tagName = 'x-columns';

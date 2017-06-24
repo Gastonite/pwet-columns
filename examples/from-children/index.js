@@ -1,7 +1,7 @@
 
 import 'pwet/src/polyfills';
 import Component from 'pwet/src/component';
-import Columns from '../src/x-columns';
+import Columns from '../../src/x-columns';
 
 Component.define(Columns);
 
